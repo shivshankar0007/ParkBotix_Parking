@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ParkBotix | Register</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at 20% 30%, #0a1f2a, #07161f);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+        }
+        .auth-container {
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(20px);
+            border-radius: 40px;
+            padding: 40px;
+            width: 90%;
+            max-width: 500px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        h1 { text-align: center; margin-bottom: 30px; color: #FFD966; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; }
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 30px;
+            color: white;
+            font-size: 1rem;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #FFD966, #FFAA5E);
+            border: none;
+            border-radius: 40px;
+            color: #0b1a23;
+            font-weight: 700;
+            font-size: 1.1rem;
+            cursor: pointer;
+        }
+        .error, .success { padding: 10px; border-radius: 30px; margin-bottom: 20px; text-align: center; }
+        .error { background: #d63031; display:none; }
+        .success { background: #00B894; display:none; }
+        .footer { text-align: center; margin-top: 20px; }
+        .footer a { color: #FFD966; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <h1><i class="fas fa-user-plus"></i> ParkBotix Register</h1>
+        <div id="error-message" class="error"></div>
+        <div id="success-message" class="success"></div>
+        <form id="register-form">
+            <div class="form-group"><label>Username *</label><input type="text" id="username" required></div>
+            <div class="form-group"><label>Email *</label><input type="email" id="email" required></div>
+            <div class="form-group"><label>Password *</label><input type="password" id="password" required></div>
+            <div class="form-group"><label>Confirm Password *</label><input type="password" id="confirm_password" required></div>
+            <div class="form-group"><label>Full Name</label><input type="text" id="full_name"></div>
+            <div class="form-group"><label>Mobile Number</label><input type="tel" id="phone" placeholder="10-digit mobile"></div>
+            <div class="form-group"><label>Vehicle Number</label><input type="text" id="vehicle_number" placeholder="e.g., UP12AB1234"></div>
+            <button type="submit">Register</button>
+        </form>
+        <div class="footer"><p>Already have an account? <a href="/login">Login here</a></p></div>
+    </div>
+    <script>
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const confirm = document.getElementById('confirm_password').value;
+            const full_name = document.getElementById('full_name').value;
+            const phone = document.getElementById('phone').value;
+            const vehicle_number = document.getElementById('vehicle_number').value;
+            const errorDiv = document.getElementById('error-message');
+            const successDiv = document.getElementById('success-message');
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+            if (password !== confirm) { errorDiv.textContent = 'Passwords do not match'; errorDiv.style.display = 'block'; return; }
+            if (!email.includes('@') || !email.includes('.')) { errorDiv.textContent = 'Invalid email'; errorDiv.style.display = 'block'; return; }
+            if (phone && !phone.match(/^[6-9]\d{9}$/)) { errorDiv.textContent = 'Invalid mobile number'; errorDiv.style.display = 'block'; return; }
+            try {
+                const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, email, password, full_name, phone, vehicle_number })
+                });
+                const data = await response.json();
+                if (response.ok) { successDiv.textContent = 'Registration successful! Redirecting...'; successDiv.style.display = 'block'; setTimeout(() => window.location.href = '/login', 2000); }
+                else { errorDiv.textContent = data.error || 'Registration failed'; errorDiv.style.display = 'block'; }
+            } catch (err) { errorDiv.textContent = 'Network error'; errorDiv.style.display = 'block'; }
+        });
+    </script>
+</body>
+</html>
