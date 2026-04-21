@@ -1,10 +1,13 @@
 import bcrypt
 import random
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
+
+def utc_now():
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 # ---------- Core Models ----------
 class User(db.Model):
@@ -17,7 +20,7 @@ class User(db.Model):
     phone = db.Column(db.String(20))
     vehicle_number = db.Column(db.String(20))
     is_admin = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now)
 
     loyalty = db.relationship('UserLoyalty', backref='user', uselist=False)
     bookings = db.relationship('Booking', backref='user', lazy=True)
@@ -50,8 +53,6 @@ class ParkingSlot(db.Model):
     occupied_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     occupied_since = db.Column(db.DateTime, nullable=True)
     locked_until = db.Column(db.DateTime, nullable=True)
-    future_reserved_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
-    future_reserved_until = db.Column(db.DateTime, nullable=True)
 
 class Booking(db.Model):
     __tablename__ = 'bookings'
@@ -59,7 +60,7 @@ class Booking(db.Model):
     lot_id = db.Column(db.String(50), db.ForeignKey('parking_lots.id'))
     slot_id = db.Column(db.String(10))
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    start_time = db.Column(db.DateTime, default=datetime.utcnow)
+    start_time = db.Column(db.DateTime, default=utc_now)
     end_time = db.Column(db.DateTime)
     duration_hours = db.Column(db.Integer, default=1)
     amount_paid = db.Column(db.Float, default=0.0)
@@ -83,7 +84,7 @@ class Payment(db.Model):
     payment_method = db.Column(db.String(50))
     transaction_id = db.Column(db.String(200))
     status = db.Column(db.String(20), default='pending')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now)
 
 class Penalty(db.Model):
     __tablename__ = 'penalties'
@@ -92,7 +93,7 @@ class Penalty(db.Model):
     booking_id = db.Column(db.String(100), db.ForeignKey('bookings.id'))
     amount = db.Column(db.Float)
     reason = db.Column(db.String(200))
-    issued_at = db.Column(db.DateTime, default=datetime.utcnow)
+    issued_at = db.Column(db.DateTime, default=utc_now)
     paid = db.Column(db.Boolean, default=False)
 
 class ApiKey(db.Model):
@@ -101,7 +102,7 @@ class ApiKey(db.Model):
     key_hash = db.Column(db.String(128), unique=True, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     user_name = db.Column(db.String(100))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now)
     expires_at = db.Column(db.DateTime, nullable=False)
     is_active = db.Column(db.Boolean, default=True)
     permissions = db.Column(db.String(200), default='read')
@@ -113,7 +114,7 @@ class AiActivity(db.Model):
     username = db.Column(db.String(80))
     query = db.Column(db.Text)
     response = db.Column(db.Text)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, default=utc_now)
 
 class PasswordReset(db.Model):
     __tablename__ = 'password_resets'
@@ -140,7 +141,7 @@ class Coupon(db.Model):
     discount_value = db.Column(db.Float, default=0)
     min_booking_amount = db.Column(db.Float, default=0)
     max_discount = db.Column(db.Float, default=0)
-    valid_from = db.Column(db.DateTime, default=datetime.utcnow)
+    valid_from = db.Column(db.DateTime, default=utc_now)
     valid_until = db.Column(db.DateTime)
     usage_limit = db.Column(db.Integer, default=1)
     used_count = db.Column(db.Integer, default=0)
@@ -154,7 +155,7 @@ class UserLoyalty(db.Model):
     total_bookings = db.Column(db.Integer, default=0)
     total_spent = db.Column(db.Float, default=0)
 
-# ---------- Revenue Model Tables ----------
+# ---------- Revenue Model ----------
 class SubscriptionPlan(db.Model):
     __tablename__ = 'subscription_plans'
     id = db.Column(db.Integer, primary_key=True)
@@ -169,7 +170,7 @@ class UserSubscription(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     plan_id = db.Column(db.Integer, db.ForeignKey('subscription_plans.id'))
-    start_date = db.Column(db.DateTime, default=datetime.utcnow)
+    start_date = db.Column(db.DateTime, default=utc_now)
     end_date = db.Column(db.DateTime)
     is_active = db.Column(db.Boolean, default=True)
 
@@ -179,7 +180,7 @@ class PenaltyShareLog(db.Model):
     booking_id = db.Column(db.String(100), db.ForeignKey('bookings.id'))
     penalty_amount = db.Column(db.Float)
     parkbotix_share = db.Column(db.Float)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now)
 
 class DynamicPricingLog(db.Model):
     __tablename__ = 'dynamic_pricing_logs'
@@ -188,7 +189,7 @@ class DynamicPricingLog(db.Model):
     original_price = db.Column(db.Float)
     peak_multiplier = db.Column(db.Float)
     final_price = db.Column(db.Float)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now)
 
 # ---------- Advanced Features Tables ----------
 class ShadowReservation(db.Model):
@@ -204,7 +205,7 @@ class ParkingEvent(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     booking_id = db.Column(db.String(100), db.ForeignKey('bookings.id'))
     event_type = db.Column(db.String(30))
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, default=utc_now)
     details = db.Column(db.Text)
 
 class SlotMorph(db.Model):
@@ -214,7 +215,7 @@ class SlotMorph(db.Model):
     from_type = db.Column(db.String(20))
     to_type = db.Column(db.String(20))
     slot_ids = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now)
 
 class AutoExtensionLog(db.Model):
     __tablename__ = 'auto_extensions'
@@ -222,7 +223,7 @@ class AutoExtensionLog(db.Model):
     booking_id = db.Column(db.String(100), db.ForeignKey('bookings.id'))
     extra_hours = db.Column(db.Float)
     extra_charge = db.Column(db.Float)
-    extended_at = db.Column(db.DateTime, default=datetime.utcnow)
+    extended_at = db.Column(db.DateTime, default=utc_now)
 
 class CongestionPrediction(db.Model):
     __tablename__ = 'congestion_predictions'
@@ -230,7 +231,7 @@ class CongestionPrediction(db.Model):
     lot_id = db.Column(db.String(50), db.ForeignKey('parking_lots.id'))
     predicted_occupancy = db.Column(db.Integer)
     time_window = db.Column(db.DateTime)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now)
 
 class VehicleFingerprint(db.Model):
     __tablename__ = 'vehicle_fingerprints'
@@ -255,16 +256,16 @@ class MarketplaceOffer(db.Model):
     offered_by = db.Column(db.Integer, db.ForeignKey('users.id'))
     offered_price = db.Column(db.Float)
     status = db.Column(db.String(20), default='open')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now)
 
 class CrowdDensityLog(db.Model):
     __tablename__ = 'crowd_density'
     id = db.Column(db.Integer, primary_key=True)
     lot_id = db.Column(db.String(50), db.ForeignKey('parking_lots.id'))
     entry_rate = db.Column(db.Float)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, default=utc_now)
 
-# ---------- Helper Functions ----------
+# ---------- Helper ----------
 def generate_lot_id(existing_ids):
     i = 1
     while True:
@@ -289,11 +290,11 @@ def init_db():
         db.session.add(demo)
     db.session.commit()
 
-    # ----- ADD 500+ PARKING LOTS -----
+    # ----- 500+ PARKING LOTS (including Chandrika Devi & Lucknow) -----
     if ParkingLot.query.count() == 0:
         all_lot_data = []
 
-        # Gorakhpur (15)
+        # Gorakhpur (including Chandrika Devi)
         gorakhpur_lots = [
             ('Gorakhpur Railway Station Parking', 'Railway Station, Gorakhpur', 26.7502, 83.3821, 10, True),
             ('Gorakhnath Mandir Parking', 'Gorakhnath Road, Gorakhpur', 26.7705, 83.3605, 10, True),
@@ -310,11 +311,12 @@ def init_db():
             ('Maharajganj Bus Stand', 'Maharajganj (40 km)', 27.0406, 83.5621, 30, False),
             ('Padrauna Parking', 'Padrauna, Kushinagar', 26.9046, 83.9795, 10, False),
             ('Captainganj Parking', 'Captainganj, Kushinagar', 26.8450, 83.8250, 10, True),
+            ('Chandrika Devi Temple Parking', 'Chandrika Devi Temple, Gorakhpur', 26.7650, 83.3700, 10, True),
         ]
         for name, loc, lat, lon, price, ai in gorakhpur_lots:
             all_lot_data.append((name, loc, lat, lon, price, ai))
 
-        # Lucknow (40+)
+        # Lucknow (30+ lots)
         lucknow_lots = [
             ('Gomti Nagar Viraj Khand', 'Viraj Khand, Gomti Nagar', 26.8520, 80.9870, 25, True),
             ('Gomti Nagar Patrakarpuram', 'Patrakarpuram, Gomti Nagar', 26.8540, 80.9840, 20, True),
@@ -338,91 +340,40 @@ def init_db():
             ('Engineering College Chauraha', 'Engineering College Chauraha', 26.8460, 80.9600, 12, False),
             ('Lucknow City Railway Station', 'Charbagh Station', 26.8305, 80.9265, 20, True),
             ('Lucknow Airport Parking', 'Amausi Airport', 26.7605, 80.8825, 25, True),
-            ('Transgomti Parking', 'Transgomti Area', 26.8660, 80.9900, 15, False),
-            ('Vibhuti Khand Parking', 'Vibhuti Khand, Gomti Nagar', 26.8480, 80.9950, 18, True),
-            ('Sahara Shopping Centre', 'Sahara Ganj', 26.8580, 80.9450, 20, True),
-            ('Fun Republic Mall', 'Fun Republic, Gomti Nagar', 26.8530, 80.9910, 22, True),
-            ('Lulu Mall Parking', 'Lulu Mall, Sitapur Road', 26.8800, 80.9600, 30, True),
-            ('Phoenix United Mall', 'Phoenix Mall, Alambagh', 26.8260, 80.9150, 25, True),
-            ('Wave Mall Parking', 'Wave Mall, Hazratganj', 26.8590, 80.9380, 28, True),
-            ('SGPGI Parking', 'SGPGI Campus', 26.8000, 80.9200, 12, False),
-            ('KGMU Parking', 'KGMU, Chowk', 26.8400, 80.9280, 10, False),
         ]
         for name, loc, lat, lon, price, ai in lucknow_lots:
             all_lot_data.append((name, loc, lat, lon, price, ai))
 
-        # NIT Delhi & Narela (30+)
+        # NIT Delhi & Narela (8+)
         nit_lots = [
             ('NIT Delhi Main Campus', 'NIT Delhi, Narela', 28.8081, 77.0979, 20, True),
             ('Narela Sector A-1', 'Sector A-1, Narela', 28.8050, 77.0950, 15, False),
             ('Narela Sector A-2', 'Sector A-2, Narela', 28.8060, 77.0990, 15, True),
-            ('Narela Sector A-3', 'Sector A-3, Narela', 28.8080, 77.1020, 15, False),
-            ('Narela Sector A-4', 'Sector A-4, Narela', 28.8100, 77.1040, 15, True),
-            ('Narela Sector B-1', 'Sector B-1, Narela', 28.8120, 77.1000, 15, False),
-            ('Narela Sector B-2', 'Sector B-2, Narela', 28.8140, 77.1030, 15, True),
-            ('Narela Bus Stand', 'Narela Bus Stand', 28.8070, 77.0950, 12, False),
             ('Narela Market Parking', 'Narela Main Market', 28.8100, 77.1010, 18, True),
             ('Bawana Industrial Area', 'Bawana Industrial Area', 28.7980, 77.0870, 20, True),
-            ('Bawana Market', 'Bawana Market', 28.8000, 77.0900, 15, False),
-            ('Pooth Khurd Parking', 'Pooth Khurd', 28.7900, 77.0820, 10, True),
             ('Alipur Market', 'Alipur', 28.8180, 77.1280, 12, False),
-            ('Alipur Bus Stand', 'Alipur Bus Stand', 28.8200, 77.1270, 12, True),
-            ('Mukundpur Parking', 'Mukundpur', 28.7850, 77.0950, 15, False),
-            ('Mukundpur Market', 'Mukundpur Market', 28.7830, 77.0930, 15, True),
-            ('Swarn Jayanti Park', 'Rohini', 28.7640, 77.1200, 20, True),
             ('Rohini Sector 7', 'Sector 7, Rohini', 28.7480, 77.1210, 18, False),
-            ('Rohini Sector 9', 'Sector 9, Rohini', 28.7520, 77.1240, 18, True),
-            ('Rohini Sector 11', 'Sector 11, Rohini', 28.7560, 77.1150, 18, False),
-            ('Rohini Sector 15', 'Sector 15, Rohini', 28.7620, 77.1120, 18, True),
             ('Pitampura Metro Station', 'Pitampura Metro', 28.7220, 77.1500, 25, True),
-            ('Pitampura Market', 'Pitampura Market', 28.7240, 77.1470, 20, False),
-            ('Prashant Vihar', 'Prashant Vihar', 28.7300, 77.1400, 18, True),
-            ('Netaji Subhash Place', 'NSP, Pitampura', 28.7150, 77.1500, 30, True),
-            ('Wazirpur Industrial Area', 'Wazirpur', 28.7100, 77.1600, 20, False),
         ]
         for name, loc, lat, lon, price, ai in nit_lots:
             all_lot_data.append((name, loc, lat, lon, price, ai))
 
-        # New Delhi (50+)
+        # New Delhi (20+)
         delhi_lots = [
             ('Connaught Place Outer Circle', 'CP, New Delhi', 28.6329, 77.2195, 50, True),
             ('Connaught Place Inner Circle', 'CP Inner Circle', 28.6300, 77.2180, 55, True),
-            ('Janpath Parking', 'Janpath, CP', 28.6280, 77.2220, 40, False),
-            ('Parliament Street', 'Parliament Street', 28.6260, 77.2150, 45, True),
             ('India Gate Parking', 'India Gate', 28.6129, 77.2295, 30, True),
-            ('Rajiv Chowk Metro', 'Rajiv Chowk Metro', 28.6320, 77.2190, 35, False),
             ('New Delhi Railway Station', 'Ajmeri Gate', 28.6410, 77.2170, 40, True),
-            ('Paharganj Parking', 'Paharganj', 28.6450, 77.2140, 25, False),
             ('Karol Bagh Market', 'Karol Bagh', 28.6500, 77.1900, 30, True),
-            ('Rajendra Place', 'Rajendra Place', 28.6420, 77.1800, 20, False),
-            ('Patel Nagar', 'Patel Nagar', 28.6450, 77.1700, 18, True),
             ('South Extension I', 'South Ex I', 28.5700, 77.2200, 35, True),
-            ('South Extension II', 'South Ex II', 28.5680, 77.2220, 35, False),
             ('Lajpat Nagar Central', 'Lajpat Nagar', 28.5700, 77.2400, 28, True),
-            ('Defence Colony', 'Defence Colony', 28.5800, 77.2300, 30, False),
-            ('Greater Kailash I', 'GK I', 28.5500, 77.2350, 32, True),
-            ('Greater Kailash II', 'GK II', 28.5450, 77.2400, 32, False),
             ('Nehru Place', 'Nehru Place', 28.5500, 77.2500, 40, True),
-            ('Kalkaji Mandir', 'Kalkaji', 28.5400, 77.2600, 25, True),
-            ('Okhla Industrial Area', 'Okhla Phase I', 28.5600, 77.2800, 30, False),
-            ('Jasola District Centre', 'Jasola', 28.5700, 77.3000, 28, True),
             ('Saket District Centre', 'Saket', 28.5250, 77.2100, 35, True),
             ('Select Citywalk Mall', 'Saket', 28.5280, 77.2150, 40, True),
-            ('DLF Place Saket', 'DLF Saket', 28.5270, 77.2120, 38, False),
-            ('Malviya Nagar', 'Malviya Nagar', 28.5300, 77.2100, 25, True),
             ('Hauz Khas Village', 'HKV', 28.5530, 77.1950, 35, True),
             ('IIT Delhi', 'IIT Delhi Main', 28.5450, 77.1920, 25, True),
-            ('Green Park Market', 'Green Park', 28.5600, 77.2000, 28, False),
             ('AIIMS Parking', 'AIIMS, Ansari Nagar', 28.5660, 77.2100, 30, True),
-            ('INA Market', 'INA Market', 28.5700, 77.2100, 22, False),
-            ('Dilli Haat INA', 'Dilli Haat', 28.5720, 77.2120, 20, True),
-            ('Chanakyapuri', 'Chanakyapuri', 28.6000, 77.1800, 35, True),
-            ('Shanti Path', 'Shanti Path, Chanakyapuri', 28.5950, 77.1850, 30, False),
-            ('R K Puram Sector 1', 'RK Puram', 28.5800, 77.1800, 22, True),
-            ('R K Puram Sector 12', 'RK Puram Sec 12', 28.5750, 77.1850, 22, False),
-            ('Munirka Parking', 'Munirka', 28.5600, 77.1700, 18, True),
             ('Vasant Kunj Mall', 'Vasant Kunj', 28.5200, 77.1500, 32, True),
-            ('Ambience Mall', 'Vasant Kunj', 28.5250, 77.1550, 35, False),
         ]
         for name, loc, lat, lon, price, ai in delhi_lots:
             all_lot_data.append((name, loc, lat, lon, price, ai))
@@ -459,24 +410,24 @@ def init_db():
                 db.session.add(slot)
         db.session.commit()
 
-    # ----- Add sample coupons -----
+    # ----- Coupons -----
     if Coupon.query.count() == 0:
         coupons = [
-            Coupon(code='WELCOME10', discount_type='percentage', discount_value=10, min_booking_amount=50, max_discount=100, valid_until=datetime.utcnow()+timedelta(days=365)),
-            Coupon(code='FREESLOT', discount_type='free', discount_value=0, min_booking_amount=0, valid_until=datetime.utcnow()+timedelta(days=30)),
-            Coupon(code='FLAT50', discount_type='fixed', discount_value=50, min_booking_amount=100, valid_until=datetime.utcnow()+timedelta(days=90)),
+            Coupon(code='WELCOME10', discount_type='percentage', discount_value=10, min_booking_amount=50, max_discount=100, valid_until=utc_now()+timedelta(days=365)),
+            Coupon(code='FREESLOT', discount_type='free', discount_value=0, min_booking_amount=0, valid_until=utc_now()+timedelta(days=30)),
+            Coupon(code='FLAT50', discount_type='fixed', discount_value=50, min_booking_amount=100, valid_until=utc_now()+timedelta(days=90)),
         ]
         db.session.add_all(coupons)
         db.session.commit()
 
-    # ----- Add loyalty for demo user -----
+    # ----- Loyalty -----
     demo_user = User.query.filter_by(username='user').first()
     if demo_user and not UserLoyalty.query.filter_by(user_id=demo_user.id).first():
         loyalty = UserLoyalty(user_id=demo_user.id, points=100, total_bookings=0, total_spent=0)
         db.session.add(loyalty)
         db.session.commit()
 
-    # ----- Add subscription plans -----
+    # ----- Subscription plans -----
     if SubscriptionPlan.query.count() == 0:
         plans = [
             SubscriptionPlan(name='Free', price_monthly=0, features='Basic access, 2 free bookings/month', free_bookings_per_month=2, is_active=True),
@@ -492,4 +443,4 @@ def init_db():
         db.session.add(setting)
         db.session.commit()
 
-    print("ParkBotix database initialized successfully with 500+ parking lots.")
+    print("ParkBotix database initialized successfully.")
