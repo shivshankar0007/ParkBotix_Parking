@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ParkBotix | Advanced Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #0a1f2a; color: white; padding: 20px; }
+        .card { background: rgba(0,0,0,0.5); border-radius: 30px; padding: 20px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.2); }
+        button, select, input { background: #FFD966; border: none; padding: 8px 16px; border-radius: 40px; margin: 5px; cursor: pointer; font-weight:600; color:#0b1a23; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px,1fr)); gap: 20px; }
+        h1 { color: #FFD966; }
+        .nav a { color: white; text-decoration: none; margin-right: 20px; background: rgba(255,255,255,0.1); padding: 8px 20px; border-radius: 40px; }
+    </style>
+</head>
+<body>
+    <div style="margin-bottom:20px;">
+        <a href="/dashboard">🏠 Dashboard</a>
+        <a href="/admin">🔧 Admin</a>
+        <a href="#" id="logout">🚪 Logout</a>
+    </div>
+    <h1><i class="fas fa-microchip"></i> ParkBotix Advanced Controls</h1>
+    <div class="grid">
+        <div class="card"><h3>🔄 Slot Morphing (RSMS)</h3>
+            <input type="text" id="morph_lot" placeholder="Lot ID (e.g., lot0001)"><br>
+            <select id="from_type"><option>car</option><option>bike</option><option>ev</option></select> → 
+            <select id="to_type"><option>car</option><option>bike</option><option>ev</option></select>
+            <button onclick="morphSlots()">Morph (2 slots)</button>
+            <div id="morph_result"></div>
+        </div>
+        <div class="card"><h3>👻 Ghost Slot Detection (GSDCP)</h3>
+            <button onclick="detectGhosts()">Detect & Fix</button>
+            <div id="ghost-result"></div>
+        </div>
+        <div class="card"><h3>⚡ EV Slot Assignment (EASAS)</h3>
+            <input type="text" id="ev_lot" placeholder="Lot ID">
+            <button onclick="assignEVSlotAdmin()">Assign EV Slot</button>
+            <div id="ev-result"></div>
+        </div>
+        <div class="card"><h3>📊 Crowd Density (CDAEC)</h3>
+            <input type="text" id="density_lot" placeholder="Lot ID">
+            <button onclick="checkDensity()">Get Entry Rate</button>
+            <div id="density-result"></div>
+        </div>
+        <div class="card"><h3>🔐 Vehicle Fingerprint (VFAP)</h3>
+            <button onclick="showFingerprintRegister()">Register New Fingerprint</button>
+            <button onclick="listFingerprints()">List All</button>
+            <div id="fp-list"></div>
+        </div>
+        <div class="card"><h3>📈 Congestion Prediction (PCDE)</h3>
+            <button onclick="predictCongestion()">Predict Congestion (Lat/Lon)</button>
+            <div id="congestion-result"></div>
+        </div>
+    </div>
+    <script>
+        async function morphSlots() {
+            const lot_id = document.getElementById('morph_lot').value;
+            const from_type = document.getElementById('from_type').value;
+            const to_type = document.getElementById('to_type').value;
+            const res = await fetch('/api/rsms/morph', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({lot_id, from_type, to_type, count:2}) });
+            const data = await res.json();
+            document.getElementById('morph_result').innerHTML = data.success ? `Morphed ${data.morphed} slots` : data.error;
+        }
+        async function detectGhosts() {
+            const res = await fetch('/api/gsd/detect', { method:'POST' });
+            const data = await res.json();
+            document.getElementById('ghost-result').innerHTML = `Ghost slots: ${data.ghost_slots_detected.join(', ') || 'none'}<br>Corrected: ${data.corrected}`;
+        }
+        async function assignEVSlotAdmin() {
+            const lot_id = document.getElementById('ev_lot').value;
+            const res = await fetch('/api/easas/assign', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({lot_id, is_ev:true}) });
+            const data = await res.json();
+            document.getElementById('ev-result').innerHTML = `Assigned EV slot: ${data.slot_id || 'none'}`;
+        }
+        async function checkDensity() {
+            const lot_id = document.getElementById('density_lot').value;
+            const res = await fetch(`/api/cdaec/status?lot_id=${lot_id}`);
+            const data = await res.json();
+            document.getElementById('density-result').innerHTML = `Entry rate: ${data.entry_rate_per_min}/min → Action: ${data.action}`;
+        }
+        async function showFingerprintRegister() {
+            const plate = prompt("Number plate:"); const color = prompt("Color:"); const shape = prompt("Shape (sedan/suv/hatchback/bike):");
+            if (!plate || !color || !shape) return;
+            const res = await fetch('/api/vfap/register', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({number_plate:plate, color, shape}) });
+            const data = await res.json();
+            alert(data.success ? "Fingerprint registered" : "Failed");
+        }
+        async function listFingerprints() {
+            // This would require an admin endpoint; for demo we just alert
+            alert("Check database via admin panel or logs.");
+        }
+        async function predictCongestion() {
+            const lat = prompt("Enter latitude:"); const lon = prompt("Enter longitude:");
+            if (!lat || !lon) return;
+            const res = await fetch('/api/pcde/advise', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({lat: parseFloat(lat), lon: parseFloat(lon)}) });
+            const data = await res.json();
+            document.getElementById('congestion-result').innerHTML = `🚦 ${data.advice}`;
+        }
+        document.getElementById('logout').addEventListener('click', async (e) => { e.preventDefault(); await fetch('/api/logout', { method: 'POST' }); window.location.href = '/login'; });
+    </script>
+</body>
+</html>

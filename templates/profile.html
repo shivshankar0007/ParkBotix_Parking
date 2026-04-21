@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ParkBotix | My Profile</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Inter',sans-serif; background:radial-gradient(circle at 20%30%,#0a1f2a,#07161f); color:#fff; min-height:100vh; }
+        .bg-3d { position:fixed; top:0; left:0; width:100%; height:100%; z-index:0; overflow:hidden; pointer-events:none; }
+        .cube { position:absolute; width:40px; height:40px; background:rgba(255,217,102,0.05); border:1px solid rgba(255,217,102,0.2); transform-style:preserve-3d; animation:rotateCube 20s infinite linear; }
+        @keyframes rotateCube { 0% { transform:rotateX(0) rotateY(0); } 100% { transform:rotateX(360deg) rotateY(360deg); } }
+        .container { max-width:1200px; margin:0 auto; padding:20px; position:relative; z-index:2; }
+        .logo { display:flex; align-items:center; gap:15px; margin-bottom:30px; flex-wrap:wrap; background:rgba(0,0,0,0.3); backdrop-filter:blur(12px); border-radius:80px; padding:10px 20px; border:1px solid rgba(255,255,255,0.2); }
+        .logo-icon { background:linear-gradient(135deg,#FFD966,#FFAA5E); width:60px; height:60px; border-radius:25px; display:flex; align-items:center; justify-content:center; font-size:2rem; color:#0b1a23; }
+        .logo-text { font-size:2rem; font-weight:800; background:linear-gradient(135deg,#fff,#FFD966); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+        .logo-tagline { font-size:0.9rem; background:rgba(0,0,0,0.4); padding:5px 15px; border-radius:40px; margin-left:auto; display:flex; gap:5px; }
+        .nav { display:flex; gap:20px; justify-content:center; margin-bottom:40px; flex-wrap:wrap; }
+        .nav a { color:#fff; text-decoration:none; font-weight:600; padding:10px 20px; border-radius:50px; background:rgba(255,255,255,0.1); backdrop-filter:blur(5px); transition:all 0.3s; display:flex; align-items:center; gap:8px; border:1px solid rgba(255,255,255,0.2); }
+        .nav a:hover { background:#FFD966; color:#0b1a23; transform:translateY(-3px); }
+        .profile-card { background:rgba(0,0,0,0.5); backdrop-filter:blur(20px); border-radius:40px; padding:30px; margin-bottom:40px; display:flex; flex-wrap:wrap; gap:30px; align-items:center; border:1px solid rgba(255,255,255,0.2); }
+        .avatar { width:120px; height:120px; border-radius:50%; background:linear-gradient(135deg,#FFD966,#FFAA5E); display:flex; align-items:center; justify-content:center; font-size:4rem; color:#0b1a23; border:4px solid rgba(255,255,255,0.3); }
+        .user-info { flex:1; }
+        .user-info h2 { font-size:2rem; margin-bottom:10px; color:#FFD966; }
+        .user-info p { margin:8px 0; display:flex; align-items:center; gap:12px; font-size:1rem; }
+        .section-title { font-size:1.8rem; font-weight:700; margin:40px 0 20px; display:flex; align-items:center; gap:10px; border-left:5px solid #FFD966; padding-left:20px; }
+        .bookings-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(300px,1fr)); gap:20px; }
+        .booking-card { background:rgba(0,0,0,0.5); backdrop-filter:blur(15px); border-radius:30px; padding:20px; transition:all 0.3s; border:1px solid rgba(255,255,255,0.2); border-left:5px solid #FFD966; }
+        .booking-card:hover { transform:translateY(-5px); border-color:#FFD966; }
+        .booking-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; }
+        .booking-id { font-size:0.8rem; color:#FFD966; background:rgba(255,255,255,0.1); padding:3px 10px; border-radius:20px; }
+        .booking-status { padding:4px 12px; border-radius:20px; font-size:0.75rem; font-weight:600; }
+        .status-active { background:#00B894; }
+        .status-completed { background:#0984e3; }
+        .status-cancelled { background:#d63031; }
+        .booking-detail { margin:10px 0; display:flex; align-items:center; gap:10px; font-size:0.9rem; }
+        .qr-btn, .navigate-booking-btn, .market-btn, .traffic-btn { background:transparent; border:2px solid #FFD966; color:#FFD966; padding:8px 12px; border-radius:40px; font-weight:600; cursor:pointer; margin-top:10px; margin-right:8px; transition:0.3s; display:inline-flex; align-items:center; gap:8px; }
+        .qr-btn:hover, .navigate-booking-btn:hover, .market-btn:hover, .traffic-btn:hover { background:#FFD966; color:#000; }
+        .error-message { background:#d63031; color:white; padding:15px; border-radius:30px; margin-bottom:20px; text-align:center; }
+        .loading-spinner { text-align:center; padding:40px; }
+        .modal { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); backdrop-filter:blur(10px); display:none; align-items:center; justify-content:center; z-index:1000; }
+        .modal-content { background:rgba(30,30,40,0.95); backdrop-filter:blur(20px); border-radius:40px; padding:30px; max-width:500px; width:90%; text-align:center; border:1px solid rgba(255,255,255,0.2); }
+        #route-map { height:300px; width:100%; border-radius:20px; margin-bottom:15px; }
+        .footer { text-align:center; margin-top:60px; padding:20px; border-top:1px solid rgba(255,255,255,0.1); opacity:0.7; }
+        @media (max-width:768px) { .profile-card { flex-direction:column; text-align:center; } .user-info p { justify-content:center; } .logo-text { font-size:1.5rem; } }
+    </style>
+</head>
+<body>
+    <div class="bg-3d" id="bg3d"></div>
+    <div class="container">
+        <div class="logo">
+            <div class="logo-icon"><i class="fas fa-car-side"></i></div>
+            <div class="logo-text">PARKBOTIX</div>
+            <div class="logo-tagline"><i class="fas fa-microchip"></i> AI • 8K • EV Ready</div>
+        </div>
+        <div class="nav">
+            <a href="/dashboard"><i class="fas fa-home"></i> Dashboard</a>
+            <a href="/profile"><i class="fas fa-user-astronaut"></i> Profile</a>
+            <a href="#" id="logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            <span id="admin-link" style="display:none;"><a href="/admin"><i class="fas fa-cog"></i> Admin</a></span>
+            <span id="admin-advanced-link" style="display:none;"><a href="/admin/advanced"><i class="fas fa-microchip"></i> Advanced</a></span>
+        </div>
+
+        <!-- Error message display -->
+        <div id="error-message" class="error-message" style="display:none;"></div>
+
+        <!-- Profile Card -->
+        <div class="profile-card">
+            <div class="avatar"><i class="fas fa-user-circle"></i></div>
+            <div class="user-info" id="user-info">
+                <h2 id="user-name">Loading...</h2>
+                <p><i class="fas fa-envelope"></i> <span id="user-email">-</span></p>
+                <p><i class="fas fa-phone"></i> <span id="user-phone">-</span></p>
+                <p><i class="fas fa-car"></i> <span id="user-vehicle">-</span></p>
+                <p><i class="fas fa-calendar-alt"></i> Member since <span id="user-joined">-</span></p>
+                <button id="fingerprint-profile-btn" style="background:#FFD966; color:#0b1a23; border:none; padding:8px 20px; border-radius:40px; margin-top:10px; cursor:pointer;">
+                    <i class="fas fa-fingerprint"></i> Register Vehicle Fingerprint
+                </button>
+            </div>
+        </div>
+
+        <!-- Bookings Section -->
+        <div class="section-title"><i class="fas fa-history"></i> My Bookings</div>
+        <div id="bookings-container" class="bookings-grid">
+            <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> Loading bookings...</div>
+        </div>
+
+        <div class="footer">© 2025 ParkBotix | AI-Powered Parking</div>
+    </div>
+
+    <!-- Navigation Modal -->
+    <div id="navigation-modal" class="modal">
+        <div class="modal-content">
+            <h3><i class="fas fa-directions"></i> Navigate to Parking</h3>
+            <div id="route-map"></div>
+            <button onclick="closeNavModal()" style="background:#FFD966; color:#0b1a23;">Close</button>
+        </div>
+    </div>
+
+    <!-- QR Modal -->
+    <div id="qr-modal" class="modal">
+        <div class="modal-content">
+            <h3>🎫 Entry QR Code</h3>
+            <img id="qr-image" src="" style="width:200px; margin:20px auto;">
+            <p>Show at entry gate</p>
+            <button onclick="closeQRModal()" style="background:#FFD966; color:#0b1a23;">Close</button>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+    <script>
+        // 3D background cubes
+        function create3DCubes() {
+            const container = document.getElementById('bg3d');
+            for(let i=0;i<30;i++) {
+                const cube=document.createElement('div');
+                cube.classList.add('cube');
+                const size=Math.random()*60+20;
+                cube.style.width=size+'px'; cube.style.height=size+'px';
+                cube.style.left=Math.random()*100+'%'; cube.style.top=Math.random()*100+'%';
+                cube.style.animationDelay=Math.random()*20+'s';
+                cube.style.animationDuration=Math.random()*15+10+'s';
+                container.appendChild(cube);
+            }
+        }
+        create3DCubes();
+
+        // Helper API call with credentials
+        async function apiCall(endpoint, method = 'GET', body = null) {
+            const options = {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include'
+            };
+            if (body) options.body = JSON.stringify(body);
+            const response = await fetch(endpoint, options);
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'API call failed');
+            }
+            return response.json();
+        }
+
+        // Check authentication and load profile
+        async function loadProfile() {
+            try {
+                // Check if user is authenticated
+                const me = await apiCall('/api/me');
+                if (!me.authenticated) {
+                    window.location.href = '/login';
+                    return;
+                }
+                
+                const user = me.user;
+                // Update profile UI
+                document.getElementById('user-name').textContent = user.full_name || user.username;
+                document.getElementById('user-email').textContent = user.email;
+                document.getElementById('user-phone').textContent = user.phone || 'Not provided';
+                document.getElementById('user-vehicle').textContent = user.vehicle_number || 'Not provided';
+                if (user.created_at) {
+                    const joinedDate = new Date(user.created_at).toLocaleDateString('en-IN');
+                    document.getElementById('user-joined').textContent = joinedDate;
+                }
+                
+                // Show admin links if user is admin
+                if (user.is_admin) {
+                    document.getElementById('admin-link').style.display = 'inline';
+                    document.getElementById('admin-advanced-link').style.display = 'inline';
+                }
+                
+                // Load bookings
+                await loadBookings();
+                
+            } catch (err) {
+                console.error('Profile load error:', err);
+                const errorDiv = document.getElementById('error-message');
+                errorDiv.textContent = 'Failed to load profile: ' + err.message;
+                errorDiv.style.display = 'block';
+                document.getElementById('user-info').innerHTML = '<h2>Error loading profile</h2>';
+            }
+        }
+
+        async function loadBookings() {
+            const container = document.getElementById('bookings-container');
+            try {
+                const bookings = await apiCall('/api/user/bookings');
+                
+                if (!bookings || bookings.length === 0) {
+                    container.innerHTML = '<div style="background:rgba(0,0,0,0.3); border-radius:30px; padding:40px; text-align:center;">🚗 No bookings found. Head to dashboard to reserve a slot!</div>';
+                    return;
+                }
+                
+                let html = '';
+                for (const b of bookings) {
+                    const statusClass = b.status === 'active' ? 'status-active' : (b.status === 'completed' ? 'status-completed' : 'status-cancelled');
+                    const statusText = b.status === 'active' ? 'Active' : (b.status === 'completed' ? 'Completed' : 'Cancelled');
+                    const startTime = new Date(b.start_time).toLocaleString('en-IN');
+                    const endTime = b.end_time ? new Date(b.end_time).toLocaleString('en-IN') : 'Not ended';
+                    
+                    html += `
+                        <div class="booking-card">
+                            <div class="booking-header">
+                                <span class="booking-id">${b.id.slice(0,8)}...</span>
+                                <span class="booking-status ${statusClass}">${statusText}</span>
+                            </div>
+                            <div class="booking-detail"><i class="fas fa-parking"></i> <strong>${b.lot_name || 'Unknown Lot'}</strong></div>
+                            <div class="booking-detail"><i class="fas fa-chair"></i> Slot ${b.slot_id}</div>
+                            <div class="booking-detail"><i class="fas fa-calendar"></i> Start: ${startTime}</div>
+                            <div class="booking-detail"><i class="fas fa-calendar-check"></i> End: ${endTime}</div>
+                            <div class="booking-detail"><i class="fas fa-clock"></i> Duration: ${b.duration_hours} hr</div>
+                            <div class="booking-detail"><i class="fas fa-rupee-sign"></i> Amount: ₹${b.amount_paid}</div>
+                    `;
+                    
+                    if (b.qr_code) {
+                        html += `<button class="qr-btn" onclick='showQRModal("${b.qr_code}")'><i class="fas fa-qrcode"></i> Show QR</button>`;
+                    }
+                    if (b.lot_lat && b.lot_lon) {
+                        html += `<button class="navigate-booking-btn" onclick='showNavigationModal(${b.lot_lat}, ${b.lot_lon}, "${b.lot_name}")'><i class="fas fa-directions"></i> Navigate</button>`;
+                    }
+                    if (b.status === 'active') {
+                        html += `<button class="market-btn" onclick='offerSlotOnMarketplace("${b.id}")'><i class="fas fa-exchange-alt"></i> Sell on Marketplace</button>`;
+                        html += `<button class="traffic-btn" onclick='adjustForTraffic("${b.id}")'><i class="fas fa-traffic-light"></i> Adjust for Traffic</button>`;
+                    }
+                    html += `</div>`;
+                }
+                container.innerHTML = html;
+            } catch (err) {
+                console.error('Bookings load error:', err);
+                container.innerHTML = '<div style="background:#d63031; border-radius:30px; padding:40px; text-align:center;">❌ Failed to load bookings. Please try again later.</div>';
+            }
+        }
+
+        // Navigation modal functions
+        let navMap = null;
+        let routingControl = null;
+
+        function showNavigationModal(lat, lon, name) {
+            document.body.style.overflow = 'hidden';
+            const modal = document.getElementById('navigation-modal');
+            const mapDiv = document.getElementById('route-map');
+            modal.style.display = 'flex';
+
+            setTimeout(() => {
+                if (navMap) {
+                    navMap.remove();
+                    if (routingControl) navMap.removeControl(routingControl);
+                }
+                navMap = L.map(mapDiv).setView([lat, lon], 14);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap'
+                }).addTo(navMap);
+                navMap.invalidateSize();
+
+                // Get user's current location for routing
+                navigator.geolocation.getCurrentPosition(
+                    pos => {
+                        const userLatLng = L.latLng(pos.coords.latitude, pos.coords.longitude);
+                        const destLatLng = L.latLng(lat, lon);
+                        routingControl = L.Routing.control({
+                            waypoints: [userLatLng, destLatLng],
+                            routeWhileDragging: true,
+                            showAlternatives: true,
+                            lineOptions: { styles: [{ color: '#FFD966', weight: 6 }] }
+                        }).addTo(navMap);
+                    },
+                    err => {
+                        console.warn('Geolocation error, showing static map');
+                        L.marker([lat, lon]).addTo(navMap).bindPopup(name).openPopup();
+                    }
+                );
+            }, 200);
+        }
+
+        function closeNavModal() {
+            document.body.style.overflow = '';
+            document.getElementById('navigation-modal').style.display = 'none';
+            if (routingControl && navMap) navMap.removeControl(routingControl);
+        }
+
+        function showQRModal(qrBase64) {
+            document.body.style.overflow = 'hidden';
+            document.getElementById('qr-image').src = `data:image/png;base64,${qrBase64}`;
+            document.getElementById('qr-modal').style.display = 'flex';
+        }
+
+        function closeQRModal() {
+            document.body.style.overflow = '';
+            document.getElementById('qr-modal').style.display = 'none';
+        }
+
+        // Advanced feature functions
+        async function registerFingerprint() {
+            const plate = prompt("Enter vehicle number plate:");
+            const color = prompt("Enter vehicle color:");
+            const shape = prompt("Enter shape (sedan/suv/hatchback/bike):");
+            if (!plate || !color || !shape) return;
+            try {
+                const res = await apiCall('/api/vfap/register', 'POST', { number_plate: plate, color, shape });
+                alert(res.success ? "✅ Vehicle fingerprint registered successfully!" : "❌ Registration failed");
+            } catch (err) {
+                alert("Error: " + err.message);
+            }
+        }
+
+        async function offerSlotOnMarketplace(bookingId) {
+            const price = prompt("Enter offer price (₹):");
+            if (!price) return;
+            try {
+                const res = await apiCall('/api/rrm/offer', 'POST', { booking_id: bookingId, price: parseFloat(price) });
+                alert(res.offer_id ? `✅ Offer created! ID: ${res.offer_id}` : "❌ Failed to create offer");
+            } catch (err) {
+                alert("Error: " + err.message);
+            }
+        }
+
+        async function adjustForTraffic(bookingId) {
+            const delay = parseInt(prompt("Enter traffic delay in minutes:"));
+            if (isNaN(delay)) return;
+            try {
+                const res = await apiCall('/api/dnlrp/adjust', 'POST', { booking_id: bookingId, traffic_delay_min: delay });
+                alert(res.new_reserved_until ? `✅ Reservation extended until ${new Date(res.new_reserved_until).toLocaleString()}` : "ℹ️ No adjustment needed");
+            } catch (err) {
+                alert("Error: " + err.message);
+            }
+        }
+
+        // Logout
+        document.getElementById('logout').addEventListener('click', async (e) => {
+            e.preventDefault();
+            await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+            window.location.href = '/login';
+        });
+
+        // Fingerprint button
+        document.getElementById('fingerprint-profile-btn').addEventListener('click', registerFingerprint);
+
+        // Expose functions globally for inline buttons
+        window.showQRModal = showQRModal;
+        window.closeQRModal = closeQRModal;
+        window.showNavigationModal = showNavigationModal;
+        window.closeNavModal = closeNavModal;
+        window.offerSlotOnMarketplace = offerSlotOnMarketplace;
+        window.adjustForTraffic = adjustForTraffic;
+        window.registerFingerprint = registerFingerprint;
+
+        // Initialize
+        loadProfile();
+    </script>
+</body>
+</html>

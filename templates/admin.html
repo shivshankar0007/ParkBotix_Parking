@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ParkBotix | Admin Panel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at 20% 30%, #0a1f2a, #07161f);
+            color: #fff;
+            min-height: 100vh;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        h1 { text-align: center; margin-bottom: 30px; color: #FFD966; }
+        .nav { background: rgba(0,0,0,0.3); backdrop-filter: blur(10px); border-radius: 60px; padding: 12px 20px; margin-bottom: 30px; display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; }
+        .nav a { color: #fff; text-decoration: none; font-weight: 600; padding: 8px 20px; border-radius: 40px; background: rgba(255,255,255,0.1); transition: 0.3s; }
+        .nav a:hover { background: #FFD966; color: #0b1a23; }
+        .tab-buttons { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .tab-buttons button { padding: 10px 20px; background: rgba(255,255,255,0.1); border: none; border-radius: 40px; color: white; font-weight: 600; cursor: pointer; transition: 0.3s; }
+        .tab-buttons button:hover { background: #FFD966; color: #0b1a23; }
+        .tab { background: rgba(0,0,0,0.4); backdrop-filter: blur(10px); border-radius: 30px; padding: 20px; border: 1px solid rgba(255,255,255,0.2); }
+        .data-table { width: 100%; border-collapse: collapse; background: rgba(255,255,255,0.1); border-radius: 20px; overflow: hidden; }
+        .data-table th, .data-table td { padding: 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.2); }
+        .data-table th { background: rgba(0,0,0,0.5); color: #FFD966; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); border-radius: 30px; color: white; }
+        button { background: #FFD966; color: #0b1a23; border: none; padding: 10px 20px; border-radius: 40px; font-weight: 600; cursor: pointer; }
+        .warning { color: #ffaa5e; margin-top: 10px; }
+        #key-display { background: rgba(0,0,0,0.5); padding: 10px; border-radius: 20px; overflow-x: auto; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><i class="fas fa-crown"></i> ParkBotix Admin</h1>
+        <div class="nav">
+            <a href="/dashboard"><i class="fas fa-home"></i> Dashboard</a>
+            <a href="/profile"><i class="fas fa-user"></i> Profile</a>
+            <a href="/admin/advanced"><i class="fas fa-microchip"></i> Advanced Controls</a>
+            <a href="#" id="logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+        <div class="tab-buttons">
+            <button onclick="showTab('users')">Users</button>
+            <button onclick="showTab('bookings')">All Bookings</button>
+            <button onclick="showTab('keys')">API Keys</button>
+            <button onclick="showTab('generate')">Generate API Key</button>
+            <button onclick="showTab('ai')">AI Insights</button>
+            <button onclick="showTab('activity')">AI Activity</button>
+        </div>
+        
+        <div id="users-tab" class="tab">
+            <h2>Users</h2>
+            <div id="users-list">Loading...</div>
+        </div>
+        
+        <div id="bookings-tab" class="tab" style="display:none;">
+            <h2>All Bookings</h2>
+            <div id="all-bookings-list">Loading...</div>
+        </div>
+        
+        <div id="keys-tab" class="tab" style="display:none;">
+            <h2>API Keys</h2>
+            <div id="keys-list">Loading...</div>
+        </div>
+        
+        <div id="generate-tab" class="tab" style="display:none;">
+            <h2>Generate API Key</h2>
+            <form id="generate-key-form">
+                <div class="form-group"><label>User ID:</label><input type="text" id="gen_user_id" required></div>
+                <div class="form-group"><label>User Name:</label><input type="text" id="gen_user_name" required></div>
+                <div class="form-group"><label>Permissions:</label><input type="text" id="gen_permissions" value="read,write"></div>
+                <button type="submit">Generate Key</button>
+            </form>
+            <div id="key-result" style="display:none; margin-top:20px;">
+                <h3>Generated Key:</h3>
+                <pre id="key-display"></pre>
+                <p class="warning">Save this key! It won't be shown again.</p>
+            </div>
+        </div>
+        
+        <div id="ai-tab" class="tab" style="display:none;">
+            <h2>AI Insights (Gemini)</h2>
+            <div class="form-group"><label>Select Parking Lot:</label><select id="ai-lot-select"></select><button onclick="getAIInsight()" style="margin-top:10px;">Get Insight</button></div>
+            <div id="ai-insight-result" style="margin-top:20px; padding:15px; background:rgba(0,0,0,0.3); border-radius:20px;"></div>
+        </div>
+
+        <div id="activity-tab" class="tab" style="display:none;">
+            <h2>AI Activity Log</h2>
+            <div id="ai-activity-list">Loading...</div>
+        </div>
+    </div>
+    
+    <script>
+        async function checkAdmin() {
+            const response = await fetch('/api/me');
+            const data = await response.json();
+            if (!data.authenticated || !data.user.is_admin) window.location.href = '/dashboard';
+        }
+        function showTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.style.display = 'none');
+            document.getElementById(`${tabName}-tab`).style.display = 'block';
+            if (tabName === 'users') loadUsers();
+            if (tabName === 'bookings') loadAllBookings();
+            if (tabName === 'keys') loadKeys();
+            if (tabName === 'ai') loadLotsForAI();
+            if (tabName === 'activity') loadAIActivity();
+        }
+        async function loadUsers() {
+            const res = await fetch('/admin/users');
+            const users = await res.json();
+            let html = '<table class="data-table"><tr><th>ID</th><th>Username</th><th>Email</th><th>Name</th><th>Admin</th></tr>';
+            users.forEach(u => html += `<tr><td>${u.id}</td><td>${u.username}</td><td>${u.email}</td><td>${u.full_name || '-'}</td><td>${u.is_admin ? 'Yes' : 'No'}</td></tr>`);
+            html += '</table>';
+            document.getElementById('users-list').innerHTML = html;
+        }
+        async function loadAllBookings() {
+            const res = await fetch('/admin/bookings');
+            const bookings = await res.json();
+            let html = '<table class="data-table"><tr><th>ID</th><th>Lot</th><th>Slot</th><th>User</th><th>Amount</th><th>Status</th></tr>';
+            bookings.slice(0,50).forEach(b => html += `<tr><td>${b.id.substring(0,8)}...</td><td>${b.lot_id}</td><td>${b.slot_id}</td><td>${b.user_id}</td><td>₹${b.amount_paid}</td><td>${b.status}</td></tr>`);
+            html += '</table>';
+            document.getElementById('all-bookings-list').innerHTML = html;
+        }
+        async function loadKeys() {
+            const res = await fetch('/admin/keys');
+            const keys = await res.json();
+            let html = '<table class="data-table"><tr><th>User ID</th><th>User Name</th><th>Expires</th><th>Permissions</th><th>Active</th><th>Action</th></tr>';
+            keys.forEach(k => {
+                html += `<tr><td>${k.user_id}</td><td>${k.user_name}</td><td>${new Date(k.expires_at).toLocaleDateString()}</td><td>${k.permissions}</td><td>${k.is_active ? 'Yes' : 'No'}</td><td>${k.is_active ? `<button onclick="deactivateKey('${k.user_id}')">Deactivate</button>` : ''}</td></tr>`;
+            });
+            html += '</table>';
+            document.getElementById('keys-list').innerHTML = html;
+        }
+        async function deactivateKey(userId) {
+            if (!confirm('Deactivate this API key?')) return;
+            await fetch(`/admin/keys/${userId}`, { method: 'DELETE' });
+            loadKeys();
+        }
+        document.getElementById('generate-key-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const user_id = document.getElementById('gen_user_id').value;
+            const user_name = document.getElementById('gen_user_name').value;
+            const permissions = document.getElementById('gen_permissions').value;
+            const res = await fetch('/admin/generate-key', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id, user_name, permissions }) });
+            const data = await res.json();
+            if (res.ok) { document.getElementById('key-display').textContent = JSON.stringify(data, null, 2); document.getElementById('key-result').style.display = 'block'; }
+            else alert(data.error);
+        });
+        async function loadLotsForAI() {
+            const res = await fetch('/api/nearby_lots', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lat: 26.7570, lon: 83.3730, radius: 1000 }) });
+            const lots = await res.json();
+            const select = document.getElementById('ai-lot-select');
+            select.innerHTML = '<option value="">Select a lot</option>';
+            lots.forEach(lot => select.innerHTML += `<option value="${lot.lot_id}">${lot.name}</option>`);
+        }
+        async function getAIInsight() {
+            const lotId = document.getElementById('ai-lot-select').value;
+            if (!lotId) return alert('Select a lot');
+            const resultDiv = document.getElementById('ai-insight-result');
+            resultDiv.innerHTML = 'Loading...';
+            const res = await fetch(`/admin/ai-insight/${lotId}`);
+            const data = await res.json();
+            resultDiv.innerHTML = `<strong>AI Insight:</strong><br>${data.insight}`;
+        }
+        async function loadAIActivity() {
+            const res = await fetch('/admin/ai-activity');
+            const logs = await res.json();
+            let html = '<table class="data-table"><tr><th>User</th><th>Query</th><th>Response</th><th>Time</th></tr>';
+            logs.forEach(log => html += `<tr><td>${log.username}</td><td>${log.query}</td><td>${log.response}</td><td>${new Date(log.timestamp).toLocaleString()}</td></tr>`);
+            html += '</table>';
+            document.getElementById('ai-activity-list').innerHTML = html;
+        }
+        document.getElementById('logout').addEventListener('click', async (e) => { e.preventDefault(); await fetch('/api/logout', { method: 'POST' }); window.location.href = '/login'; });
+        checkAdmin();
+        showTab('users');
+    </script>
+</body>
+</html>
