@@ -83,11 +83,15 @@ function initMap(lat, lon) {
     }).addTo(map).bindPopup('You are here');
 }
 
+<<<<<<< HEAD
 // Improved search: first try to find a parking lot by name, then geocode location
+=======
+>>>>>>> 7ebede44f5c73607d3c179bd817ed9f9cc955866
 async function searchLocation(query) {
     if (!query.trim()) return;
     loadingDiv.style.display = 'block';
     try {
+<<<<<<< HEAD
         // Step 1: Try to find a parking lot by name (exact or partial match)
         const lotsRes = await apiCall('/api/nearby_lots', 'POST', { lat: 0, lon: 0, radius: 1000 });
         const matchedLot = lotsRes.find(lot => lot.name.toLowerCase().includes(query.toLowerCase()));
@@ -102,6 +106,8 @@ async function searchLocation(query) {
         }
         
         // Step 2: Otherwise, geocode the location using Nominatim
+=======
+>>>>>>> 7ebede44f5c73607d3c179bd817ed9f9cc955866
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000);
         const response = await fetch(
@@ -117,10 +123,16 @@ async function searchLocation(query) {
             userLat = lat;
             userLon = lon;
             initMap(lat, lon);
+<<<<<<< HEAD
             // Use a larger radius (50 km) for city searches to cover all lots in that city
             loadNearbyLots(lat, lon, 50);
         } else {
             alert('Location not found. Try a more specific name (e.g., "Gorakhpur", "Lucknow", "NIT Delhi").');
+=======
+            loadNearbyLots(lat, lon, 20);
+        } else {
+            alert('Location not found. Try a more specific name.');
+>>>>>>> 7ebede44f5c73607d3c179bd817ed9f9cc955866
         }
     } catch (err) {
         console.error('Search error:', err);
@@ -174,7 +186,10 @@ async function loadNearbyLots(lat, lon, radius = 20) {
         const data = await response.json();
         if (response.ok) {
             if (data.length === 0 && radius === 20) {
+<<<<<<< HEAD
                 // Try with larger radius if nothing found
+=======
+>>>>>>> 7ebede44f5c73607d3c179bd817ed9f9cc955866
                 loadNearbyLots(lat, lon, 50);
                 return;
             }
@@ -193,7 +208,11 @@ async function loadNearbyLots(lat, lon, radius = 20) {
 function displayLots(lots) {
     lotsList.innerHTML = '';
     if (lots.length === 0) {
+<<<<<<< HEAD
         lotsList.innerHTML = '<div class="lot-card">No parking lots found within 50 km. Try searching for a city (e.g., Lucknow, Delhi) or a specific lot name.</div>';
+=======
+        lotsList.innerHTML = '<div class="lot-card">No parking lots found within 50 km. Try searching for a city (e.g., Lucknow, Delhi).</div>';
+>>>>>>> 7ebede44f5c73607d3c179bd817ed9f9cc955866
         return;
     }
     lots.forEach(lot => {
@@ -259,17 +278,36 @@ function displaySlots(slots) {
         } else if (slot.status === 'reserved') {
             statusText = 'Reserved';
             statusClass = 'reserved';
+<<<<<<< HEAD
+=======
+        } else if (slot.status === 'future_reserved') {
+            statusText = 'Future Reserved';
+            statusClass = 'future-reserved';
+>>>>>>> 7ebede44f5c73607d3c179bd817ed9f9cc955866
         } else {
             statusText = 'Occupied';
             statusClass = 'occupied';
         }
         const card = document.createElement('div');
         card.className = `slot-card ${statusClass}`;
+<<<<<<< HEAD
+=======
+        let buttonHtml = '';
+        if (slot.status === 'available') {
+            buttonHtml = '<button class="reserve-btn">Book Now</button>';
+        } else if (slot.status === 'future_reserved') {
+            buttonHtml = '<div class="future-badge">🔮 Booked for later</div>';
+        }
+>>>>>>> 7ebede44f5c73607d3c179bd817ed9f9cc955866
         card.innerHTML = `
             <div><strong>${slot.slot_id}</strong></div>
             <div>${slot.zone ? 'Zone ' + slot.zone : ''}</div>
             <div>${statusText}</div>
+<<<<<<< HEAD
             ${slot.status === 'available' ? '<button class="reserve-btn">Book Now</button>' : ''}
+=======
+            ${buttonHtml}
+>>>>>>> 7ebede44f5c73607d3c179bd817ed9f9cc955866
         `;
         if (slot.status === 'available') {
             card.querySelector('button').onclick = (e) => {
@@ -297,19 +335,38 @@ function stopSlotRefresh() {
     }
 }
 
+<<<<<<< HEAD
 // ==================== BOOKING OPTIONS (No time picker) ====================
+=======
+// ==================== BOOKING OPTIONS MODAL (with start time) ====================
+>>>>>>> 7ebede44f5c73607d3c179bd817ed9f9cc955866
 async function showBookingOptions(slotId, lotId, pricePerHour) {
     currentSelectedSlot = slotId;
     currentLotIdForBooking = lotId;
     currentPricePerHour = pricePerHour;
     
+<<<<<<< HEAD
     document.getElementById('booking-duration').value = '1';
     document.getElementById('coupon-code').value = '';
     document.getElementById('use-points').checked = false;
+=======
+    // Set min datetime to now
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    const startInput = document.getElementById('booking-start-time');
+    if (startInput) startInput.min = now.toISOString().slice(0,16);
+    const durationInput = document.getElementById('booking-duration');
+    if (durationInput) durationInput.value = '1';
+    const couponInput = document.getElementById('coupon-code');
+    if (couponInput) couponInput.value = '';
+    const pointsCheckbox = document.getElementById('use-points');
+    if (pointsCheckbox) pointsCheckbox.checked = false;
+>>>>>>> 7ebede44f5c73607d3c179bd817ed9f9cc955866
     await updateBookingAmount(pricePerHour);
     
     try {
         const pointsRes = await apiCall('/api/loyalty/points');
+<<<<<<< HEAD
         document.getElementById('points-display').innerHTML = `(${pointsRes.points} points available)`;
     } catch(e) { console.log(e); }
     
@@ -321,13 +378,36 @@ async function updateBookingAmount(pricePerHour) {
     let amount = pricePerHour * duration;
     const couponCode = document.getElementById('coupon-code').value;
     const usePoints = document.getElementById('use-points').checked;
+=======
+        const pointsSpan = document.getElementById('points-display');
+        if (pointsSpan) pointsSpan.innerHTML = `(${pointsRes.points} points available)`;
+    } catch(e) { console.log(e); }
+    
+    const modal = document.getElementById('booking-options-modal');
+    if (modal) modal.style.display = 'flex';
+}
+
+async function updateBookingAmount(pricePerHour) {
+    const durationElem = document.getElementById('booking-duration');
+    const duration = durationElem ? parseInt(durationElem.value) || 1 : 1;
+    let amount = pricePerHour * duration;
+    const couponCodeElem = document.getElementById('coupon-code');
+    const couponCode = couponCodeElem ? couponCodeElem.value : '';
+    const usePointsElem = document.getElementById('use-points');
+    const usePoints = usePointsElem ? usePointsElem.checked : false;
+>>>>>>> 7ebede44f5c73607d3c179bd817ed9f9cc955866
     
     if (couponCode) {
         try {
             const res = await apiCall('/api/coupons/validate', 'POST', { code: couponCode, amount });
             if (res.valid) {
                 amount = res.final_amount;
+<<<<<<< HEAD
                 document.getElementById('booking-amount').innerHTML = amount;
+=======
+                const amountSpan = document.getElementById('booking-amount');
+                if (amountSpan) amountSpan.innerHTML = amount;
+>>>>>>> 7ebede44f5c73607d3c179bd817ed9f9cc955866
                 return;
             }
         } catch(e) { console.log('Invalid coupon'); }
@@ -340,6 +420,7 @@ async function updateBookingAmount(pricePerHour) {
             }
         } catch(e) { console.log(e); }
     }
+<<<<<<< HEAD
     document.getElementById('booking-amount').innerHTML = amount;
 }
 
@@ -403,6 +484,94 @@ document.getElementById('confirm-booking-btn')?.addEventListener('click', async 
 
 function closeBookingModal() {
     document.getElementById('booking-options-modal').style.display = 'none';
+=======
+    const amountSpan = document.getElementById('booking-amount');
+    if (amountSpan) amountSpan.innerHTML = amount;
+}
+
+// Event listeners for booking modal
+const durationInput = document.getElementById('booking-duration');
+if (durationInput) durationInput.addEventListener('change', () => updateBookingAmount(currentPricePerHour));
+const couponInput = document.getElementById('coupon-code');
+if (couponInput) couponInput.addEventListener('input', () => updateBookingAmount(currentPricePerHour));
+const pointsCheckbox = document.getElementById('use-points');
+if (pointsCheckbox) pointsCheckbox.addEventListener('change', () => updateBookingAmount(currentPricePerHour));
+
+const confirmBtn = document.getElementById('confirm-booking-btn');
+if (confirmBtn) {
+    confirmBtn.addEventListener('click', async () => {
+        const startTimeElem = document.getElementById('booking-start-time');
+        const startTime = startTimeElem ? startTimeElem.value : '';
+        const durationElem = document.getElementById('booking-duration');
+        const duration = durationElem ? parseInt(durationElem.value) : 1;
+        const couponCodeElem = document.getElementById('coupon-code');
+        const couponCode = couponCodeElem ? couponCodeElem.value : '';
+        const usePointsElem = document.getElementById('use-points');
+        const usePoints = usePointsElem ? usePointsElem.checked : false;
+        const amountSpan = document.getElementById('booking-amount');
+        const amount = amountSpan ? parseFloat(amountSpan.innerText) : 0;
+        
+        if (!startTime) {
+            alert('Please select a start time.');
+            return;
+        }
+        
+        if (amount === 0) {
+            // Free booking via offer/coupon/points
+            try {
+                const res = await apiCall('/api/free-booking', 'POST', {
+                    lot_id: currentLotIdForBooking,
+                    slot_id: currentSelectedSlot,
+                    start_time: startTime,
+                    duration_hours: duration,
+                    coupon_code: couponCode,
+                    use_points: usePoints
+                });
+                if (res.success) {
+                    alert('Free booking confirmed!');
+                    showQRModal(res.qr_code);
+                    closeBookingModal();
+                    location.reload();
+                } else alert(res.error);
+            } catch(err) { alert(err.message); }
+        } else {
+            // Normal paid booking
+            try {
+                let couponId = null;
+                if (couponCode) {
+                    const couponRes = await apiCall('/api/coupons/validate', 'POST', { code: couponCode, amount });
+                    if (couponRes.valid) couponId = couponRes.coupon_id;
+                }
+                let pointsUsed = 0;
+                if (usePoints) {
+                    const pointsRes = await apiCall('/api/loyalty/redeem', 'POST', { points: 9999, amount });
+                    if (pointsRes.success) pointsUsed = pointsRes.points_used;
+                }
+                const reserveData = await apiCall('/api/reserve', 'POST', {
+                    lot_id: currentLotIdForBooking,
+                    slot_id: currentSelectedSlot,
+                    duration_hours: duration,
+                    start_time: startTime,
+                    coupon_id: couponId,
+                    points_used: pointsUsed
+                });
+                if (reserveData.success) {
+                    currentBookingId = reserveData.booking_id;
+                    currentAmount = reserveData.amount;
+                    if (paymentAmountSpan) paymentAmountSpan.textContent = currentAmount;
+                    await loadPaymentDetails();
+                    const payModal = document.getElementById('payment-modal');
+                    if (payModal) payModal.style.display = 'flex';
+                }
+            } catch(err) { alert(err.message); }
+        }
+    });
+}
+
+function closeBookingModal() {
+    const modal = document.getElementById('booking-options-modal');
+    if (modal) modal.style.display = 'none';
+>>>>>>> 7ebede44f5c73607d3c179bd817ed9f9cc955866
 }
 window.closeBookingModal = closeBookingModal;
 
@@ -412,15 +581,23 @@ async function loadPaymentDetails() {
         const response = await fetch('/api/settings');
         const data = await response.json();
         const upiId = data.upi_id;
+<<<<<<< HEAD
         document.getElementById('upi-id-display').textContent = upiId;
         const amount = currentAmount;
         const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=${encodeURIComponent(upiId)}&pn=ParkBotix&am=${amount}&cu=INR`;
         document.getElementById('upi-qr').src = qrUrl;
+=======
+        const upiSpan = document.getElementById('upi-id-display');
+        if (upiSpan) upiSpan.textContent = upiId;
+        const qrImg = document.getElementById('upi-qr');
+        if (qrImg) qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=upi://pay?pa=${encodeURIComponent(upiId)}&pn=ParkBotix`;
+>>>>>>> 7ebede44f5c73607d3c179bd817ed9f9cc955866
     } catch (err) {
         console.error('Error loading UPI settings:', err);
     }
 }
 
+<<<<<<< HEAD
 document.getElementById('confirm-payment')?.addEventListener('click', async () => {
     if (!currentBookingId) return;
     document.getElementById('payment-modal').style.display = 'none';
@@ -444,6 +621,36 @@ document.getElementById('confirm-payment')?.addEventListener('click', async () =
         alert('Payment failed: ' + err.message);
     }
 });
+=======
+if (confirmPaymentBtn) {
+    confirmPaymentBtn.addEventListener('click', async () => {
+        if (!currentBookingId) return;
+        const payModal = document.getElementById('payment-modal');
+        if (payModal) payModal.style.display = 'none';
+        try {
+            const paymentInit = await apiCall('/api/payment/initiate', 'POST', {
+                booking_id: currentBookingId,
+                payment_method: 'upi'
+            });
+            const paymentProcess = await apiCall(`/api/payment/process/${paymentInit.payment_id}`, 'POST');
+            if (paymentProcess.success) {
+                showQRModal(paymentProcess.qr_code);
+                showSlots(currentLotId);
+                const lot = await getLotDetails(currentLotId);
+                if (lot) showNavigationModal(lot.latitude, lot.longitude, lot.name);
+                // POLP lock
+                await apiCall('/api/slot/lock', 'POST', { booking_id: currentBookingId });
+                // AERR predict
+                await apiCall('/api/aerr/predict', 'POST', { booking_id: currentBookingId });
+            } else {
+                alert('Payment successful but QR not generated.');
+            }
+        } catch (err) {
+            alert('Payment failed: ' + err.message);
+        }
+    });
+}
+>>>>>>> 7ebede44f5c73607d3c179bd817ed9f9cc955866
 
 async function getLotDetails(lotId) {
     try {
@@ -461,7 +668,11 @@ function showNavigationModal(lat, lon, name) {
     const modal = document.getElementById('navigation-modal');
     const mapDiv = document.getElementById('route-map');
     if (!mapDiv) return;
+<<<<<<< HEAD
     modal.style.display = 'flex';
+=======
+    if (modal) modal.style.display = 'flex';
+>>>>>>> 7ebede44f5c73607d3c179bd817ed9f9cc955866
     setTimeout(() => {
         if (!navMap) {
             navMap = L.map(mapDiv).setView([lat, lon], 13);
@@ -486,32 +697,61 @@ function showNavigationModal(lat, lon, name) {
 
 function closeNavModal() {
     document.body.style.overflow = '';
+<<<<<<< HEAD
     document.getElementById('navigation-modal').style.display = 'none';
+=======
+    const modal = document.getElementById('navigation-modal');
+    if (modal) modal.style.display = 'none';
+>>>>>>> 7ebede44f5c73607d3c179bd817ed9f9cc955866
 }
 window.closeNavModal = closeNavModal;
 
 function closePaymentModal() {
     document.body.style.overflow = '';
+<<<<<<< HEAD
     document.getElementById('payment-modal').style.display = 'none';
+=======
+    const modal = document.getElementById('payment-modal');
+    if (modal) modal.style.display = 'none';
+>>>>>>> 7ebede44f5c73607d3c179bd817ed9f9cc955866
 }
 window.closePaymentModal = closePaymentModal;
 
 function showQRModal(qrBase64) {
     document.body.style.overflow = 'hidden';
+<<<<<<< HEAD
     document.getElementById('qr-image').src = `data:image/png;base64,${qrBase64}`;
     document.getElementById('qr-modal').style.display = 'flex';
+=======
+    const qrImg = document.getElementById('qr-image');
+    if (qrImg) qrImg.src = `data:image/png;base64,${qrBase64}`;
+    const modal = document.getElementById('qr-modal');
+    if (modal) modal.style.display = 'flex';
+>>>>>>> 7ebede44f5c73607d3c179bd817ed9f9cc955866
 }
 
 function closeQRModal() {
     document.body.style.overflow = '';
+<<<<<<< HEAD
     document.getElementById('qr-modal').style.display = 'none';
+=======
+    const modal = document.getElementById('qr-modal');
+    if (modal) modal.style.display = 'none';
+>>>>>>> 7ebede44f5c73607d3c179bd817ed9f9cc955866
 }
 window.closeQRModal = closeQRModal;
 
 function backToLots() {
     stopSlotRefresh();
+<<<<<<< HEAD
     document.getElementById('slots-panel').style.display = 'none';
     document.getElementById('lots-section').style.display = 'block';
+=======
+    const slotsPanelElem = document.getElementById('slots-panel');
+    const lotsSection = document.getElementById('lots-section');
+    if (slotsPanelElem) slotsPanelElem.style.display = 'none';
+    if (lotsSection) lotsSection.style.display = 'block';
+>>>>>>> 7ebede44f5c73607d3c179bd817ed9f9cc955866
     if (userLat && userLon) loadNearbyLots(userLat, userLon, 20);
     else alert('No location set. Please search or use My Location.');
 }
@@ -586,8 +826,19 @@ async function registerFingerprint() {
 }
 window.registerFingerprint = registerFingerprint;
 
+<<<<<<< HEAD
 window.useMyLocation = useMyLocation;
 window.refreshDistance = refreshDistance;
+=======
+// Expose global functions used in HTML
+window.useMyLocation = useMyLocation;
+window.refreshDistance = refreshDistance;
+window.showNavigationModal = showNavigationModal;
+window.closeNavModal = closeNavModal;
+window.closePaymentModal = closePaymentModal;
+window.closeQRModal = closeQRModal;
+window.backToLots = backToLots;
+>>>>>>> 7ebede44f5c73607d3c179bd817ed9f9cc955866
 
 // ==================== INITIALIZATION ====================
 (async function() {
@@ -606,7 +857,11 @@ window.refreshDistance = refreshDistance;
                 userLon = 80.9462;
                 initMap(userLat, userLon);
                 loadNearbyLots(userLat, userLon, 20);
+<<<<<<< HEAD
                 loadingDiv.innerHTML = 'Location unavailable. Using Lucknow as default. Click "My Location" to retry.';
+=======
+                if (loadingDiv) loadingDiv.innerHTML = 'Location unavailable. Using Lucknow as default. Click "My Location" to retry.';
+>>>>>>> 7ebede44f5c73607d3c179bd817ed9f9cc955866
             }
         );
     } else {
@@ -614,8 +869,17 @@ window.refreshDistance = refreshDistance;
         userLon = 80.9462;
         initMap(userLat, userLon);
         loadNearbyLots(userLat, userLon, 20);
+<<<<<<< HEAD
         loadingDiv.innerHTML = 'Geolocation not supported. Using Lucknow as default.';
     }
     document.getElementById('congestion-btn')?.addEventListener('click', getCongestionAdvice);
     document.getElementById('fingerprint-btn')?.addEventListener('click', registerFingerprint);
+=======
+        if (loadingDiv) loadingDiv.innerHTML = 'Geolocation not supported. Using Lucknow as default.';
+    }
+    const congestionBtn = document.getElementById('congestion-btn');
+    if (congestionBtn) congestionBtn.addEventListener('click', getCongestionAdvice);
+    const fingerprintBtn = document.getElementById('fingerprint-btn');
+    if (fingerprintBtn) fingerprintBtn.addEventListener('click', registerFingerprint);
+>>>>>>> 7ebede44f5c73607d3c179bd817ed9f9cc955866
 })();

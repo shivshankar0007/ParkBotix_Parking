@@ -5,6 +5,10 @@ bcrypt==4.0.1
 qrcode[pil]==7.4.2
 uuid==1.30
 requests==2.31.0
+<<<<<<< HEAD
 google-generativeai==0.3.2
 gunicorn==20.1.0
 python-dotenv==1.0.0
+=======
+google-generativeai==0.3.2
+>>>>>>> 7ebede44f5c73607d3c179bd817ed9f9cc955866
